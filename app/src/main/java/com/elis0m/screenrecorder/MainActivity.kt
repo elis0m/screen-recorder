@@ -34,7 +34,6 @@ class MainActivity : AppCompatActivity() {
 
     private var output: String? = null
     private var mediaRecorder: MediaRecorder? = null
-    var state: Boolean = false
 
     private var screenDensity: Int = 0
     private var projectionManager: MediaProjectionManager? = null
@@ -122,73 +121,10 @@ class MainActivity : AppCompatActivity() {
                 startRecording(v)
             }
         }
-
-/*
-        startBtn.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.RECORD_AUDIO
-                ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                val permissions = arrayOf(
-                    android.Manifest.permission.RECORD_AUDIO,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-                ActivityCompat.requestPermissions(this, permissions, 0)
-            } else {
-                startAudioRecording()
-            }
-        }
-
-        stopBtn.setOnClickListener {
-            stopAudioRecording()
-        }
-*/
-
-/*
-        val metrics = DisplayMetrics()
-        windowManager.defaultDisplay.getMetrics(metrics)
-        screenDensity = metrics.densityDpi
-
-        mediaRecorder = MediaRecorder()
-        projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-
-        DISPLAY_HEIGHT = metrics.heightPixels
-        DISPLAY_WIDTH = metrics.widthPixels
-
-        recordToggleBtn.setOnClickListener{v ->
-            if (ContextCompat.checkSelfPermission(
-                            this,
-                            android.Manifest.permission.RECORD_AUDIO
-                    ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-                            this,
-                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        || ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.RECORD_AUDIO)) {
-                    recordToggleBtn.isChecked = false
-                    val permissions = arrayOf(
-                            android.Manifest.permission.RECORD_AUDIO,
-                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    )
-                    ActivityCompat.requestPermissions(this, permissions, 0)
-                } else {
-                    ActivityCompat.requestPermissions(this,
-                            arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                    android.Manifest.permission.RECORD_AUDIO), REQUEST_PERMISSION)                }
-            }
-            else {
-                startRecording(v)
-            }
-        }
-*/
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             REQUEST_PERMISSION -> (
                     if (grantResults.isNotEmpty() && grantResults[0] + grantResults[1] == PackageManager.PERMISSION_GRANTED) {
@@ -313,39 +249,5 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         destroyMediaProjection()
-    }
-
-    /* 음성 녹음 */
-    private fun startAudioRecording() {
-        val fileName: String = "Record_" + SimpleDateFormat("yyyyMMddhhmmss").format(Date()).toString() + ".mp3"
-        output = Environment.getExternalStorageDirectory().absolutePath + "/Download/" + fileName
-        mediaRecorder = MediaRecorder()
-        mediaRecorder?.setAudioSource((MediaRecorder.AudioSource.MIC))
-        mediaRecorder?.setOutputFormat((MediaRecorder.OutputFormat.MPEG_4))
-        mediaRecorder?.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        mediaRecorder?.setOutputFile(output)
-
-        try {
-            mediaRecorder?.prepare()
-            mediaRecorder?.start()
-            state = true
-            Toast.makeText(this, "Recording Start !", Toast.LENGTH_SHORT).show()
-        } catch (e: IllegalStateException) {
-            e.printStackTrace()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopAudioRecording() {
-        if (state) {
-            mediaRecorder?.stop()
-            mediaRecorder?.reset()
-            mediaRecorder?.release()
-            state = false
-            Toast.makeText(this, "Recording Stop !", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "No Recording State", Toast.LENGTH_SHORT).show()
-        }
     }
 }
