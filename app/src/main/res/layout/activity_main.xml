@@ -13,7 +13,7 @@
         android:layout_height="0dp"
         app:layout_constraintHeight_percent="0.7"
         android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@id/recordToggleBtn"
+        app:layout_constraintBottom_toTopOf="@id/recordingButtons"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"/>
@@ -25,16 +25,56 @@
         app:layout_constraintTop_toBottomOf="@id/videoView"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/recordToggleBtn" />
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
+<!--
     <ToggleButton
         android:id="@+id/recordToggleBtn"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textOff="record"
-        android:textOn="stop"
+        android:textOn="stop" />
+-->
+
+    <Button
+        android:id="@+id/recordBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/purple_500"
+        android:text="record"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/recordingButtons"
         app:layout_constraintLeft_toLeftOf="parent"/>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/recordingButtons"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/recordBtn"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <Button
+            android:id="@+id/stopBtn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/purple_500"
+            android:text="stop"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/resumeToggleBtn"/>
+
+        <ToggleButton
+            android:id="@+id/resumeToggleBtn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/purple_500"
+            android:textColor="@color/white"
+            android:textOff="pause"
+            android:textOn="resume"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/stopBtn"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

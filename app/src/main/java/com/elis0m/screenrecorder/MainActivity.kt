@@ -41,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private var virtualDisplay: VirtualDisplay? = null
     private var mediaProjectionCallback: MediaProjectionCallback? = null
 
+    private val permissions: Array<String> = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
+
+    private var status: Boolean = false
     private lateinit var customHandler: Handler
     private var startTime = 0L
     private var timeInMilliseconds = 0L
@@ -67,8 +70,9 @@ class MainActivity : AppCompatActivity() {
     inner class MediaProjectionCallback : MediaProjection.Callback() {
         override fun onStop() {
             Log.d("MediaProjectionCallback", "onStop")
-            if (recordToggleBtn.isChecked) {
-                recordToggleBtn.isChecked = false
+            if (status) {
+                setStatus(false)
+
                 mediaRecorder!!.stop()
                 mediaRecorder!!.reset()
                 timeSwapBuffer != timeInMilliseconds
@@ -94,31 +98,32 @@ class MainActivity : AppCompatActivity() {
         mediaRecorder = MediaRecorder()
         projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
-        recordToggleBtn.setOnClickListener { v ->
-            if (ContextCompat.checkSelfPermission(
-                            this,
-                            android.Manifest.permission.RECORD_AUDIO
-                    ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-                            this,
-                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) != PackageManager.PERMISSION_GRANTED
+        recordBtn.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                    && ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
             ) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         || ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.RECORD_AUDIO)) {
-                    recordToggleBtn.isChecked = false
-                    val permissions = arrayOf(
-                            android.Manifest.permission.RECORD_AUDIO,
-                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    )
                     ActivityCompat.requestPermissions(this, permissions, 0)
                 } else {
-                    ActivityCompat.requestPermissions(this,
-                            arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                    android.Manifest.permission.RECORD_AUDIO), REQUEST_PERMISSION)
+                    ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION)
                 }
             } else {
-                Log.d("onCreate", "startRecording")
-                startRecording(v)
+                startRecording()
+            }
+        }
+
+        stopBtn.setOnClickListener {
+            stopRecording()
+        }
+
+        resumeToggleBtn.setOnClickListener {
+            Log.d("resumeToggleBtn", "")
+
+            if ((it as ToggleButton).isChecked) {
+                mediaRecorder!!.pause()
+            } else {
+                mediaRecorder!!.resume()
             }
         }
     }
@@ -128,9 +133,8 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             REQUEST_PERMISSION -> (
                     if (grantResults.isNotEmpty() && grantResults[0] + grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                        startRecording(recordToggleBtn)
+                        startRecording()
                     } else {
-                        recordToggleBtn.isChecked = false
                         Snackbar.make(rootLayout, "Permissions", Snackbar.LENGTH_INDEFINITE)
                                 .setAction("ENABLE") {
                                     val intent = Intent()
@@ -147,27 +151,43 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startRecording(v: View?) {
-        if ((v as ToggleButton).isChecked) {
-            Log.d("startRecording", "initRecorder")
-            initRecorder()
-            shareScreen()
+    private fun setStatus(stat: Boolean) {
+        if (stat) {
+            status = true
+            recordingButtons.visibility = View.VISIBLE
+            recordBtn.visibility = View.GONE
         } else {
-            Log.d("startRecording", "mediaRecorder stop")
-            mediaRecorder!!.stop()
-            mediaRecorder!!.reset()
-            stopScreenRecord()
-            timeSwapBuffer != timeInMilliseconds
-            customHandler.removeCallbacks(updateTimerThread)
-
-            Log.d("startRecording", "Video Uri : $output")
-            videoView.visibility = View.VISIBLE
-            videoView.setVideoURI(Uri.parse(output))
-            videoView.start()
+            status = false
+            recordingButtons.visibility = View.GONE
+            recordBtn.visibility = View.VISIBLE
         }
     }
 
+    private fun startRecording() {
+        Log.d("startRecording", "")
+        initRecorder()
+        shareScreen()
+        setStatus(true)
+    }
+
+    private fun stopRecording() {
+        Log.d("stopRecording", "mediaRecorder stop")
+        mediaRecorder!!.stop()
+        mediaRecorder!!.reset()
+        stopScreenRecord()
+        timeSwapBuffer != timeInMilliseconds
+        customHandler.removeCallbacks(updateTimerThread)
+
+        setStatus(false)
+
+        Log.d("stopRecording", "Video Uri : $output")
+        videoView.visibility = View.VISIBLE
+        videoView.setVideoURI(Uri.parse(output))
+        videoView.start()
+    }
+
     private fun shareScreen() {
+        Log.d("shareScreen", "")
         if (mediaProjection == null) {
             startActivityForResult(projectionManager!!.createScreenCaptureIntent(), REQUEST_CODE)
             return
@@ -184,10 +204,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        Log.d("onActivityResult", "")
         if (requestCode != REQUEST_CODE) return
 
         if (resultCode != Activity.RESULT_OK) {
-            recordToggleBtn.isChecked = false
             Toast.makeText(this, "screen cast permission denied", Toast.LENGTH_LONG).show()
             return
         }
@@ -207,7 +227,7 @@ class MainActivity : AppCompatActivity() {
             mediaRecorder!!.setAudioSource(MediaRecorder.AudioSource.MIC)
             mediaRecorder!!.setVideoSource(MediaRecorder.VideoSource.SURFACE)
 
-            output = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            output = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
                     .toString() + StringBuilder("/")
                     .append("Record_")
                     .append(SimpleDateFormat("yyyyMMddhhmmss").format(Date()))
