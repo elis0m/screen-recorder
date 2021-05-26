@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
+import android.media.AudioManager
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -40,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var mediaProjectionCallback: MediaProjectionCallback? = null
+    private var audioManager: AudioManager? =null
 
     private val permissions: Array<String> = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.RECORD_AUDIO)
 
@@ -221,24 +223,39 @@ class MainActivity : AppCompatActivity() {
         customHandler.postDelayed(updateTimerThread, 0)
     }
 
+    private fun checkMicRecording(): Boolean {
+        // check that microphone exists
+        // TODO: Add a function that can Choose whether to include microphone or use mute mode
+        audioManager = applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
+
+        val inputDeviceList = audioManager!!.getDevices(AudioManager.GET_DEVICES_INPUTS)
+        val outputDeviceList = audioManager!!.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+
+        Log.d("containMicRecording", "inputDeviceList : $inputDeviceList / outputDeviceList : $outputDeviceList")
+        Log.d("containMicRecording return value", "${inputDeviceList.isNotEmpty()}")
+
+        return inputDeviceList.isNotEmpty()
+    }
+
     @SuppressLint("SimpleDateFormat")
     private fun initRecorder() {
-        try {
-            mediaRecorder!!.setAudioSource(MediaRecorder.AudioSource.MIC)
-            mediaRecorder!!.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+        output = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+                .toString() + StringBuilder("/")
+                .append("Record_")
+                .append(SimpleDateFormat("yyyyMMddhhmmss").format(Date()))
+                .append(".mp4")
+                .toString()
 
-            output = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-                    .toString() + StringBuilder("/")
-                    .append("Record_")
-                    .append(SimpleDateFormat("yyyyMMddhhmmss").format(Date()))
-                    .append(".mp4")
-                    .toString()
+        try {
+            // You should check MediaRecorder state transition. It cannot be reordered.
+            if (checkMicRecording()) mediaRecorder!!.setAudioSource(MediaRecorder.AudioSource.MIC)
+            mediaRecorder!!.setVideoSource(MediaRecorder.VideoSource.SURFACE)
 
             // CamcorderProfile.QUALITY_HIGH 사용할 경우 캠이 연결되어 있지 않으면 에러남
 //            mediaRecorder!!.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH))
             mediaRecorder!!.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
             mediaRecorder!!.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-            mediaRecorder!!.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            if (checkMicRecording()) mediaRecorder!!.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
             mediaRecorder!!.setVideoEncodingBitRate(4 * 1000000) // 4Mbps
             mediaRecorder!!.setVideoFrameRate(30) // 30fps
             mediaRecorder!!.setOutputFile(output)
